@@ -5,32 +5,45 @@ class Commander:
     def __init__(self, socketbinder):
         self.sb = socketbinder
         self.index = -1
-        self.t_socket = None
+        self._socket = None
+        self.SIZE = 1024
 
 
     def set_target(self, i):
         if i < 0 or i >= len(self.sb.client_list):
             self.index = -1
-            self.t_socket = None
+            self._socket = None
         else:
             self.index = i
-            self.t_socket = self.sb.client_list[i][1]
+            self._socket = self.sb.client_list[i][1]
             print(self.sb.client_list[i][0])
 
 
-    def send_command(self, command):
-        self.t_socket.sendall(command.encode())
-        res = self.t_socket.recv(self.sb.SIZE).decode()
+    def transfer(self, typ):
+        self._socket.sendall(typ.encode())
+        check = self._socket.recv(self.SIZE).decode()
+        if check != 'Ready':
+            return check
 
-        if res ==  'Error':
-            self.set_target(-1)
-            sb.terminate_connect(self.index)
+        elif typ == 'command':
+            param = input('input command: ')
+            self._socket.sendall(param.encode())
+            return self._socket.recv(self.SIZE).decode()
 
-        return res
+        elif typ == 'file send':
+            param = input('my filename: ')
+            with open(param, 'rb') as f:
+                print('start send...')
+                while True:
+                    _buff = f.read(self.SIZE)
+                    if not _buff:
+                        self._socket.sendall(b'99')
+                        break
+                    self._socket.sendall(_buff)
+                    self._socket.recv(self.SIZE)
+                        
 
 
-    def send_file(self, filename):
-        pass
 
 
 if __name__ == '__main__':
@@ -38,6 +51,7 @@ if __name__ == '__main__':
     c = Commander(sb)
 
     while True:
+        print('command / file send / ... ')
         cmd = input('>>> ')
         cmd = cmd.split(' ')
 
@@ -51,7 +65,6 @@ if __name__ == '__main__':
         elif cmd[0] == 'enter':
             c.set_target(int(cmd[1]))
 
-        elif cmd[0] == 'cmd':
-            print(c.send_command(' '.join(cmd[1:])))
-            continue
-
+        elif c._socket != None:
+            print(c.transfer(' '.join(cmd)))
+            
