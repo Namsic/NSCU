@@ -1,14 +1,13 @@
-import socket
+import socket, os, time
 from getpass import getuser
-import os
 import platform
+import ipsetter
 
 class Client:
     def __init__(self):
-        self.ADDR = ('127.0.0.1', 3056)
         self.SIZE = 1024
-
         self.INFO = 'info.ns'
+
         self._socket = socket.socket()
         self.open_socket()
         self.info_init()
@@ -17,7 +16,12 @@ class Client:
 
 
     def open_socket(self):
-        self._socket.connect(self.ADDR)
+        self.ADDR = (ipsetter.get_serverip(), 3056)
+        try:
+            self._socket.connect(self.ADDR)
+        except ConnectionRefusedError:
+            time.sleep(1)
+            self.open_socket()
         
 
 
@@ -98,7 +102,12 @@ class Client:
         finally:
             self._socket.close()
 
+def main():
+    try:
+        c = Client()
+    except BrokenPipeError:
+        main()
 
 if __name__ == '__main__':
-    
-    c = Client()
+    main()
+

@@ -48,6 +48,7 @@ class SocketBinder():
 
     # return client_list
     def get_client_list(self):
+        self.renew_client_list()
         if len(self.client_list)==0:
             print('No client')
             return

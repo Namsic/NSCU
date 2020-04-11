@@ -20,16 +20,28 @@ class Commander:
             print(self.sb.client_list[i][0])
 
 
+    def receive(self, size=0):
+        if size == 0:
+            size = self.SIZE
+        recv = self._socket.recv(size)
+        if recv.decode() == 'Error':
+            self.sb.terminate_connect(self.index)
+            self.set_target(-1)
+            return 'Error'.encode()
+        else:
+            return recv
+
+
     def transfer(self, typ):
         self._socket.sendall(typ.encode())
-        check = self._socket.recv(self.SIZE).decode()
+        check = self.receive().decode()
         if check != 'Ready':
             return check
 
         elif typ == 'command':
             param = input('input command: ')
             self._socket.sendall(param.encode())
-            return self._socket.recv(self.SIZE).decode()
+            return self.receive().decode()
 
         elif typ == 'file send':
             param1 = input('myfile name: ')
@@ -48,7 +60,7 @@ class Commander:
                         self._socket.sendall(b'99')
                         return 'Success'
                     self._socket.sendall(_buff)
-                    self._socket.recv(self.SIZE)
+                    self.receive()
 
         elif typ == 'file receive':
             param1 = input('targetfile name: ')
@@ -56,12 +68,12 @@ class Commander:
             if param2 == '':
                 param2 = param1
             self._socket.sendall(param1.encode())
-            if self._socket.recv(self.SIZE).decode() == 'sorry':
+            if self.receive().decode() == 'sorry':
                 return '{} not exist'.format(param1)
             self._socket.sendall('Ready'.encode())
             with open(param2, 'wb') as f:
                 while True:
-                    _buff = self._socket.recv(self.SIZE)
+                    _buff = self._socket.receive()
                     if _buff == b'99':
                         return 'Success'
                     else:
@@ -84,7 +96,8 @@ if __name__ == '__main__':
 
     while True:
         if c.index != -1:
-            print('command / file send / set alias / ... ')
+            print('\ncommand / file send(receive) / set alias / ... ')
+            print('{} / {}'.format(c.index, c.sb.client_list[c.index][0]))
         cmd = input('>>> ')
         cmd = cmd.split(' ')
 
