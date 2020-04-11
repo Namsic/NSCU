@@ -41,7 +41,12 @@ class Commander:
                         break
                     self._socket.sendall(_buff)
                     self._socket.recv(self.SIZE)
-                        
+
+        elif typ == 'set alias':
+            param = input("{}'s alias: ".format(self.sb.client_list[self.index][0]))
+            self._socket.sendall(param.encode())
+            print(self.sb.client_list[self.index][0])
+            print(param)
 
 
 

@@ -1,22 +1,41 @@
 import socket
 from getpass import getuser
-import os, sys
+import os
+import platform
 
 class Client:
     def __init__(self):
-        self.SERVER_IP = '127.0.0.1'
-        self.PORT = 3056
-        self.ADDR = (self.SERVER_IP, self.PORT)
+        self.ADDR = ('127.0.0.1', 3056)
         self.SIZE = 1024
 
+        self.INFO = 'info.ns'
         self._socket = socket.socket()
         self.open_socket()
+        self.info_init()
+
         self.receive_loop()
+
 
     def open_socket(self):
         self._socket.connect(self.ADDR)
-        self._socket.sendall(getuser().encode())
+        
 
+
+    def info_init(self):
+        if not os.path.isfile(self.INFO):
+            self.info_setting(str(getuser()))
+        with open(self.INFO, 'r') as f:
+            a = f.readlines()[0].replace('\n','')
+            print(a)
+            self._socket.sendall(a.encode())
+
+
+    def info_setting(self, alias):
+        with open(self.INFO, 'w') as f:
+            f.write(alias + '\n')
+            f.write(str(getuser()) + '\n')
+            f.write(str(platform.system()) + '\n')
+        
 
     def transfer(self):
         typ = self._socket.recv(self.SIZE).decode()
@@ -42,6 +61,10 @@ class Client:
                         f.write(_buff)
                         self._socket.sendall('ok'.encode())
 
+        elif typ == 'set alias':
+            self._socket.sendall('Ready'.encode())
+            self.info_setting(self._socket.recv(self.SIZE).decode())
+
         else:
             self._socket.sendall('Undefined command'.encode())
 
@@ -52,4 +75,5 @@ class Client:
 
 
 if __name__ == '__main__':
+    
     c = Client()
