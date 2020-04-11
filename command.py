@@ -1,4 +1,5 @@
 from socketbinder import SocketBinder
+import os
 
 
 class Commander:
@@ -31,19 +32,45 @@ class Commander:
             return self._socket.recv(self.SIZE).decode()
 
         elif typ == 'file send':
-            param = input('my filename: ')
-            with open(param, 'rb') as f:
-                print('start send...')
+            param1 = input('myfile name: ')
+            param2 = input('savefile name: ')
+            if param2 == '':
+                param2 = param1
+            if not os.path.isfile(param1):
+                self._socket.sendall('sorry'.encode())
+                return '{} not exist'.format(param1)
+
+            self._socket.sendall(param2.encode())
+            with open(param1, 'rb') as f:
                 while True:
                     _buff = f.read(self.SIZE)
                     if not _buff:
                         self._socket.sendall(b'99')
-                        break
+                        return 'Success'
                     self._socket.sendall(_buff)
                     self._socket.recv(self.SIZE)
 
+        elif typ == 'file receive':
+            param1 = input('targetfile name: ')
+            param2 = input('savefile name: ')
+            if param2 == '':
+                param2 = param1
+            self._socket.sendall(param1.encode())
+            if self._socket.recv(self.SIZE).decode() == 'sorry':
+                return '{} not exist'.format(param1)
+            self._socket.sendall('Ready'.encode())
+            with open(param2, 'wb') as f:
+                while True:
+                    _buff = self._socket.recv(self.SIZE)
+                    if _buff == b'99':
+                        return 'Success'
+                    else:
+                        f.write(_buff)
+                        self._socket.sendall('ok'.encode())
+
+
         elif typ == 'set alias':
-            param = input("{}'s alias: ".format(self.sb.client_list[self.index][0]))
+            param = input("{}'s new alias: ".format(self.sb.client_list[self.index][0]))
             self._socket.sendall(param.encode())
             print(self.sb.client_list[self.index][0])
             print(param)
@@ -56,7 +83,8 @@ if __name__ == '__main__':
     c = Commander(sb)
 
     while True:
-        print('command / file send / ... ')
+        if c.index != -1:
+            print('command / file send / set alias / ... ')
         cmd = input('>>> ')
         cmd = cmd.split(' ')
 
